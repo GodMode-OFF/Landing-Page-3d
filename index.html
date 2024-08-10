@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Portfolio</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #e0e0e0;
+        }
+        #info-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            display: none;
+            z-index: 1;
+        }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div id="info-box"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/GLTFLoader.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // Use device pixel ratio for better scaling
+        document.body.appendChild(renderer.domElement);
+
+        // Background sky
+        const skyTexture = new THREE.TextureLoader().load('https://example.com/path-to-your-clouds-texture.jpg'); // Replace with your cloud texture URL
+        scene.background = skyTexture;
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(directionalLight);
+
+        // Floor
+        const floorGeometry = new THREE.PlaneGeometry(100, 100);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        // Background walls
+        function createWall(position, rotation, color) {
+            const wallGeometry = new THREE.PlaneGeometry(100, 10);
+            const wallMaterial = new THREE.MeshStandardMaterial({ color: color });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.copy(position);
+            wall.rotation.copy(rotation);
+            scene.add(wall);
+        }
+
+        createWall(new THREE.Vector3(0, 5, -50), new THREE.Euler(0, 0, 0), 0x888888);  // Back wall
+        createWall(new THREE.Vector3(0, 5, 50), new THREE.Euler(0, Math.PI, 0), 0x888888);  // Front wall
+        createWall(new THREE.Vector3(-50, 5, 0), new THREE.Euler(0, Math.PI / 2, 0), 0x888888);  // Left wall
+        createWall(new THREE.Vector3(50, 5, 0), new THREE.Euler(0, -Math.PI / 2, 0), 0x888888);  // Right wall
+
+        // Create more detailed house-like rooms
+        function createHouse(color, position) {
+            const house = new THREE.Group();
+
+            // House base
+            const baseGeometry = new THREE.BoxGeometry(6, 4, 6);
+            const baseMaterial = new THREE.MeshStandardMaterial({ color: color });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 2;
+            house.add(base);
+
+            // Roof
+            const roofGeometry = new THREE.ConeGeometry(5, 3, 4);
+            const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 5.5;
+            roof.rotation.y = Math.PI / 4;
+            house.add(roof);
+
+            // Door
+            const doorGeometry = new THREE.BoxGeometry(1, 2, 0.1);
+            const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x6b8e23 });
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(0, 1, 3);
+            house.add(door);
+
+            // Windows
+            function createWindow(x, z) {
+                const windowGeometry = new THREE.BoxGeometry(1, 1, 0.1);
+                const windowMaterial = new THREE.MeshStandardMaterial({ color: 0xadd8e6 });
+                const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+                windowMesh.position.set(x, 1.5, z);
+                house.add(windowMesh);
+            }
+
+            createWindow(-2, 3);
+            createWindow(2, 3);
+
+            house.position.copy(position);
+            scene.add(house);
+            return house;
+        }
+
+        const aboutHouse = createHouse(0x0000ff, new THREE.Vector3(-20, 0, 0));
+        const projectsHouse = createHouse(0x00ff00, new THREE.Vector3(0, 0, -20));
+        const contactHouse = createHouse(0xffff00, new THREE.Vector3(20, 0, 0));
+
+        // Create a humanoid character
+        const character = new THREE.Group();
+        
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 2.25;
+        character.add(head);
+
+        // Body
+        const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 1;
+        character.add(body);
+
+        // Legs
+        const legGeometry = new THREE.CylinderGeometry(0.4, 0.4, 1, 32);
+        const legMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        const leg1 = new THREE.Mesh(legGeometry, legMaterial);
+        leg1.position.set(-0.6, -0.5, 0);
+        const leg2 = new THREE.Mesh(legGeometry, legMaterial);
+        leg2.position.set(0.6, -0.5, 0);
+        character.add(leg1);
+        character.add(leg2);
+
+        scene.add(character);
+
+        // Initial camera position
+        camera.position.set(0, 5, 15);
+
+        // Movement controls
+        const keys = {};
+        let isJumping = false;
+        let jumpVelocity = 0;
+        const gravity = 0.05; // Reduced gravity
+        document.addEventListener('keydown', (event) => { keys[event.key] = true; });
+        document.addEventListener('keyup', (event) => { keys[event.key] = false; });
+
+        // Information box
+        const infoBox = document.getElementById('info-box');
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Character movement
+            const speed = 0.3; // Increased movement speed
+            const jumpHeight = 1; // Reduced jump height
+            
+            if (keys['ArrowUp']) character.position.z -= speed;
+            if (keys['ArrowDown']) character.position.z += speed;
+            if (keys['ArrowLeft']) character.position.x -= speed;
+            if (keys['ArrowRight']) character.position.x += speed;
+            
+            if (keys[' '] && !isJumping) {
+                isJumping = true;
+                jumpVelocity = 0.3; // Set initial jump velocity
+            }
+            
+            if (isJumping) {
+                character.position.y += jumpVelocity;
+                jumpVelocity -= gravity;
+                
+                if (character.position.y <= 1) {
+                    character.position.y = 1;
+                    isJumping = false;
+                }
+            }
+            
+            // Update camera position to follow the character
+            camera.position.x = character.position.x;
+            camera.position.z = character.position.z + 15;
+            camera.position.y = 5;
+
+            // Simple interaction detection
+            if (character.position.distanceTo(aboutHouse.position) < 6) {
+                infoBox.innerHTML = "About Me: A brief overview of my experience and skills.";
+                infoBox.style.display = 'block';
+            } else if (character.position.distanceTo(projectsHouse.position) < 6) {
+                infoBox.innerHTML = "Projects: A showcase of my best work.";
+                infoBox.style.display = 'block';
+            } else if (character.position.distanceTo(contactHouse.position) < 6) {
+                infoBox.innerHTML = "Contact: How to get in touch with me.";
+                infoBox.style.display = 'block';
+            } else {
+                infoBox.style.display = 'none';
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
